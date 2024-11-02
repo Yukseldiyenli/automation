@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Systeem Specificaties Grafiek</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Live Systeem Specificaties</h1>
+
+    <!-- Container for device buttons -->
+    <div id="device-buttons"></div>
+    <button id="back-button" style="display: none;" onclick="stopFetching()">Back</button>
+
+    <!-- Chart canvases (initially hidden) -->
+    <div id="charts" style="display: none;">
+        <canvas id="cpuChart" width="400" height="200"></canvas>
+        <canvas id="memoryChart" width="400" height="200"></canvas>
+        <canvas id="diskChart" width="400" height="200"></canvas>
+        <canvas id="networkChart" width="400" height="200"></canvas>
+    </div>
+
+    <script>
+        let fetchInterval = null;
+        const cpuData = [], memoryData = [], diskData = [], networkSentData = [], networkReceivedData = [], timestamps = [];
+
+        // Load device buttons
+        async function loadDevices() {
+            const response = await fetch('/devices');
+            const devices = await response.json();
+            const container = document.getElementById('device-buttons');
+
+            // Clear any existing buttons
+            container.innerHTML = '';
+
+            devices.forEach(hostname => {
+                const button = document.createElement('button');
+                button.innerText = hostname;
+                button.onclick = () => startFetching(hostname);
+                container.appendChild(button);
+            });
+        }
+
+        // Start fetching data for a specific device
+        function startFetching(hostname) {
+            // Show the back button, show charts, and hide device buttons
+            document.getElementById('back-button').style.display = 'inline';
+            document.getElementById('device-buttons').style.display = 'none';
+            document.getElementById('charts').style.display = 'block';
+
+            // Clear any existing interval
+            if (fetchInterval) {
+                clearInterval(fetchInterval);
+            }
+
+            // Set an interval to fetch data every 5 seconds for the selected device
+            fetchInterval = setInterval(() => updateCharts(hostname), 5000);
+
+            // Fetch initial data immediately
+            updateCharts(hostname);
+        }
+
+        // Stop fetching data and show device selection again
+        function stopFetching() {
+            // Hide the back button and charts, show device buttons
+            document.getElementById('back-button').style.display = 'none';
+            document.getElementById('device-buttons').style.display = 'block';
+            document.getElementById('charts').style.display = 'none';
+
+            // Clear the fetching interval
+            if (fetchInterval) {
+                clearInterval(fetchInterval);
+                fetchInterval = null;
+            }
+
+            // Clear chart data
+            clearChartData();
+        }
+
+        // Fetch and update charts with data for the selected device
+        async function updateCharts(hostname) {
+            const response = await fetch(`/data?hostname=${hostname}`);
+            const data = await response.json();
+
+            // Clear existing data
+            timestamps.length = 0;
+            cpuData.length = 0;
+            memoryData.length = 0;
+            diskData.length = 0;
+            networkSentData.length = 0;
+            networkReceivedData.length = 0;
+
+            // Populate with new data
+            data.timestamps.forEach((timestamp, index) => {
+                timestamps.push(timestamp);
+                cpuData.push(data.cpu_percent[index]);
+                memoryData.push(data.memory_percent[index]);
+                diskData.push(data.disk_used[index]);
+                networkSentData.push(data.network_sent[index]);
+                networkReceivedData.push(data.network_received[index]);
+            });
+
+            // Update charts
+            cpuChart.update();
+            memoryChart.update();
+            diskChart.update();
+            networkChart.update();
+        }
+
+        // Clear data from the charts
+        function clearChartData() {
+            timestamps.length = 0;
+            cpuData.length = 0;
+            memoryData.length = 0;
+            diskData.length = 0;
+            networkSentData.length = 0;
+            networkReceivedData.length = 0;
+
+            // Update charts to remove lines
+            cpuChart.update();
+            memoryChart.update();
+            diskChart.update();
+            networkChart.update();
+        }
+
+        // Initialize the charts
+        const cpuChart = new Chart(document.getElementById('cpuChart').getContext('2d'), {
+            type: 'line',
+            data: { labels: timestamps, datasets: [{ label: 'CPU Gebruik (%)', data: cpuData, borderColor: 'rgb(255, 99, 132)', fill: false }] },
+            options: { responsive: true, scales: { x: { title: { display: true, text: 'Tijdstip' } }, y: { title: { display: true, text: 'CPU Gebruik (%)' }, min: 0, max: 100 } } }
+        });
+
+        const memoryChart = new Chart(document.getElementById('memoryChart').getContext('2d'), {
+            type: 'line',
+            data: { labels: timestamps, datasets: [{ label: 'Geheugen Gebruik (%)', data: memoryData, borderColor: 'rgb(54, 162, 235)', fill: false }] },
+            options: { responsive: true, scales: { x: { title: { display: true, text: 'Tijdstip' } }, y: { title: { display: true, text: 'Geheugen Gebruik (%)' }, min: 0, max: 100 } } }
+        });
+
+        const diskChart = new Chart(document.getElementById('diskChart').getContext('2d'), {
+            type: 'line',
+            data: { labels: timestamps, datasets: [{ label: 'Schijfruimte Gebruik (GB)', data: diskData, borderColor: 'rgb(75, 192, 192)', fill: false }] },
+            options: { responsive: true, scales: { x: { title: { display: true, text: 'Tijdstip' } }, y: { title: { display: true, text: 'Schijfruimte Gebruik (GB)' }, min: 0 } } }
+        });
+
+        const networkChart = new Chart(document.getElementById('networkChart').getContext('2d'), {
+            type: 'line',
+            data: { labels: timestamps, datasets: [
+                { label: 'Netwerk Verzonden (bytes)', data: networkSentData, borderColor: 'rgb(255, 159, 64)', fill: false },
+                { label: 'Netwerk Ontvangen (bytes)', data: networkReceivedData, borderColor: 'rgb(153, 102, 255)', fill: false }
+            ] },
+            options: { responsive: true, scales: { x: { title: { display: true, text: 'Tijdstip' } }, y: { title: { display: true, text: 'Netwerkverkeer (bytes)' }, min: 0 } } }
+        });
+
+        // Load devices on page load
+        loadDevices();
+    </script>
+</body>
+</html>

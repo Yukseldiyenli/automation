@@ -1,19 +1,17 @@
 from flask import Flask, request, jsonify, render_template
 import sqlite3
-import os
 
 app = Flask(__name__)
 DATABASE = 'system_info.db'
 
-# Initialisatie van de database
+
+# Initialize the database
 def init_db():
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-
-    # Verwijder de bestaande tabel als deze bestaat (start vers)
+    # Drop the existing table if it exists (start fresh)
     c.execute('DROP TABLE IF EXISTS system_specs')
-
-    # Maak de tabel opnieuw met de volledige structuur
+    # Create the table with full structure
     c.execute('''
         CREATE TABLE system_specs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,21 +32,46 @@ def init_db():
     conn.close()
     print("Database initialized with the required structure.")
 
-# Endpoint voor de hoofdpagina
+
+# Endpoint for the main page
 @app.route('/')
 def index():
     return render_template('specs.html')
 
-# Endpoint voor grafiekgegevens
-@app.route('/data')
-def data():
+
+# Endpoint to fetch the list of unique hostnames (connected devices)
+@app.route('/devices')
+def devices():
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    c.execute('SELECT timestamp, cpu_percent, memory_percent, disk_used, network_sent, network_received FROM system_specs ORDER BY timestamp DESC LIMIT 60')
+    c.execute('SELECT DISTINCT hostname FROM system_specs')
+    rows = c.fetchall()
+    conn.close()
+    hostnames = [row[0] for row in rows]
+    return jsonify(hostnames)
+
+
+# Endpoint to fetch chart data (optional hostname parameter)
+@app.route('/data')
+def data():
+    hostname = request.args.get('hostname')
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+
+    if hostname:
+        c.execute('''
+            SELECT timestamp, cpu_percent, memory_percent, disk_used, network_sent, network_received 
+            FROM system_specs WHERE hostname = ? ORDER BY timestamp DESC LIMIT 60
+        ''', (hostname,))
+    else:
+        c.execute('''
+            SELECT timestamp, cpu_percent, memory_percent, disk_used, network_sent, network_received 
+            FROM system_specs ORDER BY timestamp DESC LIMIT 60
+        ''')
+
     rows = c.fetchall()
     conn.close()
 
-    # Data formatteren voor de grafiek
     data = {
         "timestamps": [row[0] for row in rows][::-1],
         "cpu_percent": [row[1] for row in rows][::-1],
@@ -59,7 +82,8 @@ def data():
     }
     return jsonify(data)
 
-# Endpoint voor het ontvangen van rapporten
+
+# Endpoint to receive reports from agents
 @app.route('/report', methods=['POST'])
 def report():
     data = request.json
@@ -87,6 +111,7 @@ def report():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
+
 
 if __name__ == "__main__":
     init_db()
