@@ -4,7 +4,7 @@ import psutil
 import time
 
 # Server URL (change if Flask server is running on a different IP or port)
-SERVER_URL = 'http://192.168.1.81:5000/report'
+SERVER_URL = 'http://127.0.0.1:5000/report'
 REPORT_INTERVAL = 5  # Interval in seconds to send data
 
 def get_system_info(prev_net_io):
