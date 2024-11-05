@@ -15,8 +15,8 @@
         }
         #charts canvas {
             maintainAspectRatio: false;
-            flex: 1 1 25%; /* Make each chart take about half width */
-            max-width: 25%; /* Limit width for 2x2 layout */
+            flex: 1 1 45%; /* Make each chart take about half width */
+            max-width: 45%; /* Limit width for 2x2 layout */
             height: 50px; /* Set a fixed height for each chart */
         }
     </style>
@@ -30,10 +30,10 @@
 
     <!-- Chart canvases in a 2x2 grid layout -->
     <div id="charts" style="display: none;">
-        <canvas id="cpuChart"></canvas>
-        <canvas id="memoryChart"></canvas>
-        <canvas id="diskChart"></canvas>
-        <canvas id="networkChart"></canvas>
+        <canvas height="100px" id="cpuChart"></canvas>
+        <canvas height="100px" id="memoryChart"></canvas>
+        <canvas height="100px" id="diskChart"></canvas>
+        <canvas height="100px" id="networkChart"></canvas>
     </div>
 
     <script>
