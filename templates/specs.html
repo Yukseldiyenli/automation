@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Systeem Specificaties Grafiek</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Style for charts container to display in a 2x2 grid */
+        #charts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px; /* Space between charts */
+            justify-content: center;
+        }
+        #charts canvas {
+            maintainAspectRatio: false;
+            flex: 1 1 25%; /* Make each chart take about half width */
+            max-width: 25%; /* Limit width for 2x2 layout */
+            height: 50px; /* Set a fixed height for each chart */
+        }
+    </style>
 </head>
 <body>
     <h1>Live Systeem Specificaties</h1>
@@ -13,12 +28,12 @@
     <div id="device-buttons"></div>
     <button id="back-button" style="display: none;" onclick="stopFetching()">Back</button>
 
-    <!-- Chart canvases (initially hidden) -->
+    <!-- Chart canvases in a 2x2 grid layout -->
     <div id="charts" style="display: none;">
-        <canvas id="cpuChart" width="400" height="200"></canvas>
-        <canvas id="memoryChart" width="400" height="200"></canvas>
-        <canvas id="diskChart" width="400" height="200"></canvas>
-        <canvas id="networkChart" width="400" height="200"></canvas>
+        <canvas id="cpuChart"></canvas>
+        <canvas id="memoryChart"></canvas>
+        <canvas id="diskChart"></canvas>
+        <canvas id="networkChart"></canvas>
     </div>
 
     <script>
@@ -47,7 +62,7 @@
             // Show the back button, show charts, and hide device buttons
             document.getElementById('back-button').style.display = 'inline';
             document.getElementById('device-buttons').style.display = 'none';
-            document.getElementById('charts').style.display = 'block';
+            document.getElementById('charts').style.display = 'flex';
 
             // Clear any existing interval
             if (fetchInterval) {

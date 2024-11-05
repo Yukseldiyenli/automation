@@ -9,11 +9,9 @@ DATABASE = 'system_info.db'
 def init_db():
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    # Drop the existing table if it exists (start fresh)
-    c.execute('DROP TABLE IF EXISTS system_specs')
     # Create the table with full structure
     c.execute('''
-        CREATE TABLE system_specs (
+        CREATE TABLE IF NOT EXISTS system_specs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             hostname TEXT,
             os TEXT,
