@@ -3,10 +3,15 @@ import requests
 import platform
 import psutil
 import time
+import rsa
 
 # Server URL (change if Flask server is running on a different IP or port)
-SERVER_URL = 'http://192.168.3.100:5000/report'
+SERVER_URL = 'http://192.168.1.81:5000/report'
 REPORT_INTERVAL = 5  # Interval in seconds to send data
+
+# Load the private key for signing
+with open("private_key.pem", "rb") as key_file:
+    private_key = rsa.PrivateKey.load_pkcs1(key_file.read())
 
 def get_system_info(prev_net_io):
     disk_usage = psutil.disk_usage('/')
@@ -34,9 +39,25 @@ def get_system_info(prev_net_io):
     }
     return info, net_io
 
+def sign_data(data):
+    # Convert data to bytes for signing
+    data_bytes = str(data).encode('utf-8')
+    # Sign the data using the private key and return the signature
+    signature = rsa.sign(data_bytes, private_key, 'SHA-256')
+    return signature
+
 def send_report(info):
+    # Sign the info data
+    signature = sign_data(info)
+
+    # Include the signature in the request
+    data_with_signature = {
+        "info": info,
+        "signature": signature.hex()  # Convert to hex for easy transmission
+    }
+
     try:
-        response = requests.post(SERVER_URL, json=info, verify=False)
+        response = requests.post(SERVER_URL, json=data_with_signature, verify=False)
         response.raise_for_status()
         print(f"Report sent successfully: {info}")
     except requests.exceptions.RequestException as e:
