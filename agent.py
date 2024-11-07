@@ -6,7 +6,7 @@ import time
 import rsa
 
 # Server URL (change if Flask server is running on a different IP or port)
-SERVER_URL = 'http://192.168.1.81:5000/report'
+SERVER_URL = 'http://192.168.3.100:5000/report'
 REPORT_INTERVAL = 5  # Interval in seconds to send data
 
 # Load the private key for signing
